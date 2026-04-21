@@ -1,0 +1,12 @@
+# virtual environment
+.venv/
+
+# processed data
+data/processed/
+
+# csv files
+*.csv
+
+# python cache
+__pycache__/
+*.pyc
