@@ -1,5 +1,20 @@
 import pandas as pd
+def clean_season(x):
+    x = str(x)
+    if '/' in x:
+        last_part = x.split('/')[-1]   
+        if len(last_part) == 2:
+            return int('20' + last_part)  
+        else:
+            return int(last_part)        
+
+    return int(x)
 def load_and_clean(path):
+    df=pd.read_csv(path)
+    df['season'] = df['season'].apply(clean_season)
+    df['season'] = pd.to_numeric(df['season'], errors='coerce')
+    df = df.dropna(subset=['season'])
+    df['season'] = df['season'].astype(int)
     team_map = {
     'Royal Challengers Bangalore': 'Royal Challengers Bengaluru',
     'Delhi Daredevils': 'Delhi Capitals',
@@ -20,7 +35,6 @@ def load_and_clean(path):
         'Subrata Roy Sahara Stadium': 'Maharashtra Cricket Association Stadium',
         'Dr. Y.S. Rajasekhara Reddy ACA-VDCA Cricket Stadium': 'ACA-VDCA Stadium'
     }
-    df=pd.read_csv(path)
     str_cols=df.select_dtypes(include='object').columns
     df[str_cols]=df[str_cols].fillna("Missing")
     df["batting_team"]=df["batting_team"].replace(team_map)
@@ -61,7 +75,7 @@ def create_df_stats_bowler(df):
     return stats_bowler
 
 def create_df_stats_team(df):
-    matches=df[['match_id','season','batting_team','bowling_team','match_won_by']].drop_duplicates()
+    matches=df[['match_id','season','batting_team','bowling_team','match_won_by','toss_winner','toss_decision']].drop_duplicates()
     team1=matches[['match_id','season','batting_team','match_won_by']].rename(columns={'batting_team':'team'})
     team2=matches[['match_id','season','bowling_team','match_won_by']].rename(columns={'bowling_team':'team'})
     all_teams=pd.concat([team1,team2])
@@ -71,8 +85,83 @@ def create_df_stats_team(df):
     stats_team['wins']=stats_team['wins'].fillna(0)
     stats_team['losses']=stats_team['matches']-stats_team['wins']
     stats_team['win_pct']= (stats_team['wins']/stats_team['matches'])*100
+    toss = matches[['match_id','season','toss_winner','match_won_by','toss_decision']]
+    toss_counts = toss.groupby(['toss_winner','season']).size().reset_index(name='toss_wins').rename(columns={
+        'toss_winner':'team'
+        })
+    stats_team = stats_team.merge(toss_counts, on=['team','season'], how='left')
+    stats_team['toss_wins'] = stats_team['toss_wins'].fillna(0)
+    toss['toss_win_match_win'] = (toss['toss_winner'] == toss['match_won_by']).astype(int)
+
+    toss_effect = toss.groupby(['toss_winner','season']) \
+        .agg({'toss_win_match_win':'mean'}).reset_index() \
+        .rename(columns={
+            'toss_winner':'team',
+            'toss_win_match_win':'toss_win_match_win_pct'
+        })
+
+    toss_effect['toss_win_match_win_pct'] *= 100
+
+    stats_team = stats_team.merge(toss_effect, on=['team','season'], how='left')
+    toss_decision = toss.groupby(['toss_winner','season','toss_decision']) \
+        .size().reset_index(name='decision_count')
+
+    toss_decision = toss_decision.pivot_table(
+        index=['toss_winner','season'],
+        columns='toss_decision',
+        values='decision_count',
+        fill_value=0
+    ).reset_index()
+
+    toss_decision = toss_decision.rename(columns={'toss_winner':'team'})
+
+    stats_team = stats_team.merge(toss_decision, on=['team','season'], how='left')
+    matches['is_chasing_win'] = (
+        (matches['toss_decision'] == 'field') &
+        (matches['toss_winner'] == matches['match_won_by'])
+    ).astype(int)
+
+    matches['is_defending_win'] = (
+        (matches['toss_decision'] == 'bat') &
+        (matches['toss_winner'] == matches['match_won_by'])
+    ).astype(int)
+
+    chasing = matches.groupby(['toss_winner','season'])['is_chasing_win'] \
+        .sum().reset_index().rename(columns={'toss_winner':'team','is_chasing_win':'chasing_wins'})
+
+    defending = matches.groupby(['toss_winner','season'])['is_defending_win'] \
+        .sum().reset_index().rename(columns={'toss_winner':'team','is_defending_win':'defending_wins'})
+
+    stats_team = stats_team.merge(chasing, on=['team','season'], how='left')
+    stats_team = stats_team.merge(defending, on=['team','season'], how='left')
+
+    runs_scored = df.groupby(['batting_team','season'])['runs_total'] \
+        .sum().reset_index().rename(columns={'batting_team':'team','runs_total':'runs_scored'})
+
+    runs_conceded = df.groupby(['bowling_team','season'])['runs_total'] \
+        .sum().reset_index().rename(columns={'bowling_team':'team','runs_total':'runs_conceded'})
+
+    stats_team = stats_team.merge(runs_scored, on=['team','season'], how='left')
+    stats_team = stats_team.merge(runs_conceded, on=['team','season'], how='left')
+    balls_faced = df.groupby(['batting_team','season']).size().reset_index(name='balls_faced') \
+        .rename(columns={'batting_team':'team'})
+
+    balls_bowled = df.groupby(['bowling_team','season']).size().reset_index(name='balls_bowled') \
+        .rename(columns={'bowling_team':'team'})
+
+    stats_team = stats_team.merge(balls_faced, on=['team','season'], how='left')
+    stats_team = stats_team.merge(balls_bowled, on=['team','season'], how='left')
+    stats_team['overs_faced'] = stats_team['balls_faced'] / 6
+    stats_team['overs_bowled'] = stats_team['balls_bowled'] / 6
+
+    stats_team['run_rate'] = stats_team['runs_scored'] / stats_team['overs_faced']
+    stats_team['economy_rate'] = stats_team['runs_conceded'] / stats_team['overs_bowled']
+
+    stats_team['nrr'] = stats_team['run_rate'] - stats_team['economy_rate']
     stats_team = stats_team[stats_team['team'] != 'Other']
+
     return stats_team
+
 def create_df_stats_venue(df):
     stats_venue=df.groupby('venue').agg({
         'match_id':'nunique',
@@ -84,16 +173,7 @@ def create_df_stats_venue(df):
     highest_totals.columns=['venue',"highest_totals"]
     stats_venue=stats_venue.merge(highest_totals,on="venue",how="left")
     return stats_venue
-def clean_season(x):
-    x = str(x)
-    if '/' in x:
-        last_part = x.split('/')[-1]   
-        if len(last_part) == 2:
-            return int('20' + last_part)  
-        else:
-            return int(last_part)        
 
-    return int(x)
 def create_df_stats_season(df):
     df=df.copy()
     df['season'] = df['season'].apply(clean_season)
@@ -136,7 +216,7 @@ def main():
     create_df_stats_team(df).to_csv("../processed/team_stats.csv",index=False)
     create_df_stats_venue(df).to_csv("../processed/venue_stats.csv",index=False)
     create_df_stats_season(df).to_csv("../processed/season_stats.csv",index=False)
-    print("All Processed Fiels Saved")
+    print("All Processed Files Saved")
 
 if __name__=="__main__":
     main()
