@@ -1,8 +1,6 @@
 # virtual environment
 .venv/
 
-# processed data
-data/processed/
 
 # csv files
 *.csv
