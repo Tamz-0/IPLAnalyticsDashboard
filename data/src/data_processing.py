@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 def clean_season(x):
     x = str(x)
     if '/' in x:
@@ -10,7 +11,7 @@ def clean_season(x):
 
     return int(x)
 def load_and_clean(path):
-    df=pd.read_csv(path)
+    df=pd.read_csv(path, low_memory=False)
     df['season'] = df['season'].apply(clean_season)
     df['season'] = pd.to_numeric(df['season'], errors='coerce')
     df = df.dropna(subset=['season'])
@@ -210,12 +211,24 @@ def create_df_stats_season(df):
     stats_season.columns = ['season', 'total_matches', 'total_runs', 'most_sixes', 'highest_score', 'title_winner']
     return stats_season
 def main():
-    df=load_and_clean("../raw/IPL.csv")
-    create_df_stats_batter(df).to_csv("../processed/player_batting.csv",index=False)
-    create_df_stats_bowler(df).to_csv("../processed/player_bowler.csv",index=False)
-    create_df_stats_team(df).to_csv("../processed/team_stats.csv",index=False)
-    create_df_stats_venue(df).to_csv("../processed/venue_stats.csv",index=False)
-    create_df_stats_season(df).to_csv("../processed/season_stats.csv",index=False)
+    BASE_DIR = Path(__file__).resolve().parents[2]
+
+    raw_path = BASE_DIR / "data" / "raw" / "IPL.csv"
+    processed_dir = BASE_DIR / "data" / "processed"
+
+    print("DEBUG PATH:", raw_path)   # 👈 ADD THIS TEMP
+
+    if not raw_path.exists():
+        raise FileNotFoundError(f"File not found at: {raw_path}")
+
+    processed_dir.mkdir(parents=True, exist_ok=True)
+
+    df = load_and_clean(raw_path)
+    create_df_stats_batter(df).to_csv(processed_dir / "player_batting.csv", index=False)
+    create_df_stats_bowler(df).to_csv(processed_dir / "player_bowler.csv", index=False)
+    create_df_stats_team(df).to_csv(processed_dir / "team_stats.csv", index=False)
+    create_df_stats_venue(df).to_csv(processed_dir / "venue_stats.csv", index=False)
+    create_df_stats_season(df).to_csv(processed_dir / "season_stats.csv", index=False)
     print("All Processed Files Saved")
 
 if __name__=="__main__":
