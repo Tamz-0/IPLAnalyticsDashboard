@@ -1,0 +1,61 @@
+teamA,teamB,total_matches,teamA_wins,teamB_wins,teamA_win_pct
+Chennai Super Kings,Delhi Capitals,32,0,0,0.0
+Chennai Super Kings,Gujarat Titans,8,0,0,0.0
+Chennai Super Kings,Kolkata Knight Riders,32,0,0,0.0
+Chennai Super Kings,Lucknow Super Giants,6,0,0,0.0
+Chennai Super Kings,Mumbai Indians,39,0,0,0.0
+Chennai Super Kings,Other,8,0,0,0.0
+Chennai Super Kings,Punjab Kings,33,0,0,0.0
+Chennai Super Kings,Rajasthan Royals,32,0,0,0.0
+Chennai Super Kings,Royal Challengers Bengaluru,35,0,0,0.0
+Chennai Super Kings,Sunrisers Hyderabad,32,0,0,0.0
+Delhi Capitals,Gujarat Titans,8,0,0,0.0
+Delhi Capitals,Kolkata Knight Riders,34,0,0,0.0
+Delhi Capitals,Lucknow Super Giants,8,0,0,0.0
+Delhi Capitals,Mumbai Indians,38,0,0,0.0
+Delhi Capitals,Other,12,0,0,0.0
+Delhi Capitals,Punjab Kings,35,0,0,0.0
+Delhi Capitals,Rajasthan Royals,30,0,0,0.0
+Delhi Capitals,Rising Pune Supergiants,4,0,0,0.0
+Delhi Capitals,Royal Challengers Bengaluru,33,0,0,0.0
+Delhi Capitals,Sunrisers Hyderabad,37,0,0,0.0
+Gujarat Titans,Kolkata Knight Riders,4,0,0,0.0
+Gujarat Titans,Lucknow Super Giants,8,0,0,0.0
+Gujarat Titans,Mumbai Indians,8,0,0,0.0
+Gujarat Titans,Punjab Kings,7,0,0,0.0
+Gujarat Titans,Rajasthan Royals,9,0,0,0.0
+Gujarat Titans,Royal Challengers Bengaluru,6,0,0,0.0
+Gujarat Titans,Sunrisers Hyderabad,6,0,0,0.0
+Kolkata Knight Riders,Lucknow Super Giants,7,0,0,0.0
+Kolkata Knight Riders,Mumbai Indians,36,0,0,0.0
+Kolkata Knight Riders,Other,11,0,0,0.0
+Kolkata Knight Riders,Punjab Kings,36,0,0,0.0
+Kolkata Knight Riders,Rajasthan Royals,30,0,0,0.0
+Kolkata Knight Riders,Rising Pune Supergiants,4,0,0,0.0
+Kolkata Knight Riders,Royal Challengers Bengaluru,35,0,0,0.0
+Kolkata Knight Riders,Sunrisers Hyderabad,40,0,0,0.0
+Lucknow Super Giants,Mumbai Indians,8,0,0,0.0
+Lucknow Super Giants,Punjab Kings,6,0,0,0.0
+Lucknow Super Giants,Rajasthan Royals,6,0,0,0.0
+Lucknow Super Giants,Royal Challengers Bengaluru,7,0,0,0.0
+Lucknow Super Giants,Sunrisers Hyderabad,7,0,0,0.0
+Mumbai Indians,Other,11,0,0,0.0
+Mumbai Indians,Punjab Kings,35,0,0,0.0
+Mumbai Indians,Rajasthan Royals,31,0,0,0.0
+Mumbai Indians,Rising Pune Supergiants,6,0,0,0.0
+Mumbai Indians,Royal Challengers Bengaluru,35,0,0,0.0
+Mumbai Indians,Sunrisers Hyderabad,35,0,0,0.0
+Other,Punjab Kings,11,0,0,0.0
+Other,Rajasthan Royals,7,0,0,0.0
+Other,Rising Pune Supergiants,4,0,0,0.0
+Other,Royal Challengers Bengaluru,12,0,0,0.0
+Other,Sunrisers Hyderabad,12,0,0,0.0
+Punjab Kings,Rajasthan Royals,30,0,0,0.0
+Punjab Kings,Rising Pune Supergiants,4,0,0,0.0
+Punjab Kings,Royal Challengers Bengaluru,37,0,0,0.0
+Punjab Kings,Sunrisers Hyderabad,35,0,0,0.0
+Rajasthan Royals,Royal Challengers Bengaluru,34,0,0,0.0
+Rajasthan Royals,Sunrisers Hyderabad,31,0,0,0.0
+Rising Pune Supergiants,Royal Challengers Bengaluru,4,0,0,0.0
+Rising Pune Supergiants,Sunrisers Hyderabad,4,0,0,0.0
+Royal Challengers Bengaluru,Sunrisers Hyderabad,37,0,0,0.0

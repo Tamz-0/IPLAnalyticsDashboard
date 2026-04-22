@@ -1,9 +1,8 @@
 # virtual environment
 .venv/
 
-
-# csv files
-*.csv
+# raw data only — too large for git
+data/raw/IPL.csv
 
 # python cache
 __pycache__/
