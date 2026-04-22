@@ -18,7 +18,7 @@ html, body, [class*="css"] { font-family: 'Barlow', sans-serif; }
 .stApp { background: #080810; }
 
 section[data-testid="stSidebar"] {
-    background: #0d0d1a !important;
+    background: #0a0a18 !important;
     border-right: 1px solid #1e1e3a !important;
 }
 section[data-testid="stSidebar"] > div { padding-top: 1rem !important; }

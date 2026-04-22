@@ -18,7 +18,7 @@ html, body, [class*="css"] { font-family: 'Barlow', sans-serif; }
 .stApp { background: #080810; }
 
 section[data-testid="stSidebar"] {
-    background: #0d0d1a !important;
+    background: #0a0a18 !important;
     border-right: 1px solid #1e1e3a !important;
 }
 section[data-testid="stSidebar"] > div { padding-top: 1rem !important; }
@@ -194,8 +194,23 @@ def main():
         st.stop()
 
     sidebar_label("Select Player")
+    # define defaults
+    default_batter = "V Kohli"
+    default_bowler = "JJ Bumrah"  
+    if role == "Batter":
+        default_player = default_batter
+    elif role == "Bowler":
+        default_player = default_bowler
+    else:
+        default_player = default_batter  # fallback
+
+    # safe index selection
+    default_index = filtered.index(default_player) if default_player in filtered else 0
+
     player = st.sidebar.selectbox(
-        "Select Player", filtered,
+        "Select Player",
+        filtered,
+        index=default_index,
         label_visibility="collapsed"
     )
 

@@ -22,7 +22,7 @@ html, body, [class*="css"] {
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background: #0d0d1a !important;
+    background: #0a0a18 !important;
     border-right: 1px solid #1e1e3a !important;
 }
 section[data-testid="stSidebar"] > div {
@@ -105,7 +105,9 @@ def get_team_color(team):
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("../../data/processed/team_stats.csv")
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", ".."))
+    return pd.read_csv(os.path.join(ROOT_DIR, "data", "processed", "team_stats.csv"))
 
 def apply_chart_theme(fig, height=380):
     fig.update_layout(

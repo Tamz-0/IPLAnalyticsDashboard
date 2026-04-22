@@ -18,7 +18,7 @@ html, body, [class*="css"] { font-family: 'Barlow', sans-serif; }
 .stApp { background: #080810; }
 
 section[data-testid="stSidebar"] {
-    background: #0d0d1a !important;
+    background: #0a0a18 !important;
     border-right: 1px solid #1e1e3a !important;
 }
 section[data-testid="stSidebar"] > div { padding-top: 1rem !important; }
@@ -227,8 +227,13 @@ def main():
     """, unsafe_allow_html=True)
 
     sidebar_label("Select Season")
+    default_year = 2025
+    default_index = seasons.index(default_year) if default_year in seasons else 0
+
     selected = st.sidebar.selectbox(
-        "Select Season", seasons,
+        "Select Season",
+        seasons,
+        index=default_index,
         label_visibility="collapsed"
     )
 
@@ -287,15 +292,15 @@ def main():
                     if "total_matches" in season_row.index else "N/A"
     total_runs    = f"{int(season_row['total_runs']):,}" \
                     if "total_runs" in season_row.index else "N/A"
-    most_sixes    = int(season_row["most_sixes"]) \
-                    if "most_sixes" in season_row.index else "N/A"
+    total_sixes    = int(season_row["total_sixes"]) \
+                    if "total_sixes" in season_row.index else "N/A"
     highest_score = int(season_row["highest_score"]) \
                     if "highest_score" in season_row.index else "N/A"
 
     c1, c2, c3, c4 = st.columns(4)
     stat_card(c1, "Total Matches",  str(total_matches), "#e8e8ff", winner_color)
     stat_card(c2, "Total Runs",     str(total_runs),    "#3b82f6", winner_color)
-    stat_card(c3, "Total Sixes",    str(most_sixes),    "#f59e0b", winner_color)
+    stat_card(c3, "Total Sixes",    str(total_sixes),    "#f59e0b", winner_color)
     stat_card(c4, "Highest Score",  str(highest_score), "#22c55e", winner_color)
 
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)

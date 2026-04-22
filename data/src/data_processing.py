@@ -40,6 +40,7 @@ def load_and_clean(path):
     df[str_cols]=df[str_cols].fillna("Missing")
     df["batting_team"]=df["batting_team"].replace(team_map)
     df["bowling_team"]=df["bowling_team"].replace(team_map)
+    df['match_won_by'] = df['match_won_by'].replace(team_map)
     df['venue']=df.venue.str.split(",").str[0].replace(venue_mapping)
     df['date']=pd.to_datetime(df['date'])
     df['current_score']=df.groupby(['match_id','innings'])['runs_total'].cumsum()
@@ -184,7 +185,8 @@ def create_df_stats_season(df):
     season_base=df.groupby('season').agg({
         'match_id':'nunique',
         'runs_total':'sum',
-        'is_six':'sum'
+        'is_six':'sum',
+        'is_four':'sum'
     }).reset_index()
     match_totals=df.groupby(['season','match_id','innings'])['runs_total'].sum().reset_index()
     highest_scores = match_totals.groupby('season')['runs_total'].max().reset_index()
@@ -208,8 +210,140 @@ def create_df_stats_season(df):
     champions = champions.drop_duplicates(subset='season', keep='first')
     stats_season = season_base.merge(highest_scores, on='season')
     stats_season = stats_season.merge(champions, on='season', how='left')
-    stats_season.columns = ['season', 'total_matches', 'total_runs', 'most_sixes', 'highest_score', 'title_winner']
+    stats_season.columns = ['season', 'total_matches', 'total_runs', 'total_sixes','total_fours', 'highest_score', 'title_winner']
     return stats_season
+def create_df_stats_h2h_matches(df):
+    matches = df.groupby('match_id').agg({
+        'season': 'first',
+        'date': 'first',
+        'batting_team': 'first',
+        'bowling_team': 'first',
+        'match_won_by': lambda x: x.dropna().iloc[-1] if len(x.dropna()) > 0 else None,
+        'venue': 'first'
+    }).reset_index()
+    matches = matches[[
+        'match_id',
+        'season',
+        'date',
+        'batting_team',
+        'bowling_team',
+        'match_won_by',
+        'venue'
+    ]]
+
+    matches = matches.rename(columns={
+        'batting_team': 'team1',
+        'bowling_team': 'team2',
+        'match_won_by': 'winner'
+    })
+    matches['winner'] = matches['winner'].str.strip()
+    # 🔥 REMOVE INVALID MATCHES (CRITICAL FIX)
+    matches = matches[
+        (matches['winner'].notna()) &
+        (matches['winner'] != "Missing") &
+        (matches['winner'] != "")
+    ]
+
+    # 🔥 REMOVE SELF MATCH BUG (rare but possible)
+    matches = matches[matches['team1'] != matches['team2']]
+
+    return matches
+def create_df_stats_h2h_summary(matches):
+    matches = matches.copy()
+
+    # normalize team pairs
+    matches['teamA'] = matches[['team1','team2']].min(axis=1)
+    matches['teamB'] = matches[['team1','team2']].max(axis=1)
+
+    h2hsummary_stats = matches.groupby(['teamA','teamB']).agg(
+        total_matches=('match_id','count'),
+        teamA_wins=('winner', lambda x: (x == x.name[0]).sum()),
+        teamB_wins=('winner', lambda x: (x == x.name[1]).sum())
+    ).reset_index()
+
+    h2hsummary_stats['teamA_win_pct'] = (h2hsummary_stats['teamA_wins'] / h2hsummary_stats['total_matches']) * 100
+
+    return h2hsummary_stats
+def create_df_stats_h2h_player_stats(df):
+    # ---------------- BATTERS ----------------
+    bat = df.groupby([
+        'batter','batting_team','bowling_team'
+    ]).agg({
+        'runs_batter':'sum',
+        'balls_faced':'sum'
+    }).reset_index()
+
+    bat['strike_rate'] = (
+        bat['runs_batter'] / bat['balls_faced'].replace(0,1)
+    ) * 100
+
+    bat = bat.rename(columns={
+        'batter':'player',
+        'batting_team':'player_team',
+        'bowling_team':'opponent_team'
+    })
+
+    bat['role'] = 'batter'
+
+    # ---------------- BOWLERS ----------------
+    bowl = df.groupby([
+        'bowler','bowling_team','batting_team'
+    ]).agg({
+        'runs_bowler':'sum',
+        'bowler_wicket':'sum',
+        'ball_no':'count'
+    }).reset_index()
+
+    bowl['overs'] = bowl['ball_no'] / 6
+    bowl['economy'] = bowl['runs_bowler'] / bowl['overs'].replace(0,1)
+
+    bowl = bowl.rename(columns={
+        'bowler':'player',
+        'bowling_team':'player_team',
+        'batting_team':'opponent_team'
+    })
+
+    bowl['role'] = 'bowler'
+
+    # ---------------- MERGE ----------------
+    h2h_player_stats = pd.concat([bat, bowl], ignore_index=True)
+
+    return h2h_player_stats
+def create_df_player_vs_player(df):
+    pvp = df.groupby(['batter', 'bowler']).agg(
+        runs=('runs_batter', 'sum'),
+        balls=('balls_faced', 'sum'),
+        dismissals=('player_out', lambda x: x.notna().sum())
+    ).reset_index()
+
+    pvp['strike_rate'] = (pvp['runs'] / pvp['balls'].replace(0,1)) * 100
+    pvp['average'] = pvp['runs'] / pvp['dismissals'].replace(0,1)
+
+    return pvp
+def create_df_player_vs_team(df):
+    pvt = df.groupby(['batter', 'bowling_team']).agg(
+        runs=('runs_batter', 'sum'),
+        balls=('balls_faced', 'sum'),
+        dismissals=('player_out', lambda x: x.notna().sum()),
+        fours=('is_four', 'sum'),
+        sixes=('is_six', 'sum')
+    ).reset_index()
+
+    pvt['strike_rate'] = (pvt['runs'] / pvt['balls'].replace(0,1)) * 100
+    pvt['average'] = pvt['runs'] / pvt['dismissals'].replace(0,1)
+
+    return pvt
+def create_df_bowler_vs_team(df):
+    bvt = df.groupby(['bowler', 'batting_team']).agg(
+        runs_conceded=('runs_bowler', 'sum'),
+        wickets=('bowler_wicket', 'sum'),
+        balls=('ball_no', 'count')
+    ).reset_index()
+    bvt['overs'] = bvt['balls'] / 6
+    bvt['economy'] = bvt['runs_conceded'] / bvt['overs'].replace(0, 1)
+    bvt['average'] = bvt['runs_conceded'] / bvt['wickets'].replace(0, 1)
+    bvt['strike_rate'] = bvt['balls'] / bvt['wickets'].replace(0, 1)
+    return bvt
 def main():
     BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -229,6 +363,12 @@ def main():
     create_df_stats_team(df).to_csv(processed_dir / "team_stats.csv", index=False)
     create_df_stats_venue(df).to_csv(processed_dir / "venue_stats.csv", index=False)
     create_df_stats_season(df).to_csv(processed_dir / "season_stats.csv", index=False)
+    create_df_stats_h2h_matches(df).to_csv(processed_dir / "h2h_matches.csv", index=False)
+    create_df_stats_h2h_summary(create_df_stats_h2h_matches(df)).to_csv(processed_dir / "h2hsummary.csv", index=False)
+    create_df_stats_h2h_player_stats(df).to_csv(processed_dir / "h2hplayer_stats.csv", index=False)
+    create_df_player_vs_player(df).to_csv(processed_dir / "player_vs_player.csv", index=False)
+    create_df_player_vs_team(df).to_csv(processed_dir / "player_vs_team.csv", index=False)
+    create_df_bowler_vs_team(df).to_csv(processed_dir / "bowler_vs_team.csv", index=False)
     print("All Processed Files Saved")
 
 if __name__=="__main__":
